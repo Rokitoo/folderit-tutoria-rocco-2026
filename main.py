@@ -29,6 +29,8 @@ api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 # ---------- Seguridad ----------
 def verificar_api_key(clave: str | None = Security(api_key_header)):
+    print(clave)
+    print(API_KEY)
     if clave is None or API_KEY is None:
         raise HTTPException(status_code=401, detail="API Key inválida o ausente")
     if not secrets.compare_digest(clave.encode(), API_KEY.encode()):
@@ -45,8 +47,9 @@ def inicio():
 @app.get("/items")
 def listar_items(buscar: str | None = None):
     items = db.cargar_items()
+    print(items)
     if buscar:
-        items = [i for i in items if buscar.lower() in i["nombre"].lower()]
+        items = [i for i in items if buscar.lower() in i["nombre_artistico"].lower()]
     return items
 
 
