@@ -31,12 +31,39 @@ def buscar_item(item_id):
             return item
     return None
 
+def agregar_artista(datos: dict[str, Any]) -> dict[str, Any]:
+    """Inserta un artista y devuelve la fila creada por Supabase."""
+    response = (
+        _obtener_cliente()
+        .table(TABLA_ARTISTAS)
+        .insert(datos)
+        .execute()
+    )
+    if not response.data:
+        raise RuntimeError("Supabase no devolvió el artista insertado.")
+    return response.data[0]
 
-def agregar_item(datos):
-    """Agrega un elemento nuevo (diccionario sin id), le asigna un id y lo devuelve."""
-    items = cargar_items()
-    nuevo_id = max((i["id"] for i in items), default=0) + 1
-    item = {"id": nuevo_id, **datos}
-    items.append(item)
-    guardar_items(items)
-    return item
+
+def actualizar_artista(
+    artista_id: int, datos: dict[str, Any]
+) -> dict[str, Any] | None:
+    """Reemplaza los datos del artista y devuelve la fila actualizada, si existe."""
+    response = (
+        _obtener_cliente()
+        .table(TABLA_ARTISTAS)
+        .update(datos)
+        .eq("id", artista_id)
+        .execute()
+    )
+    return response.data[0] if response.data else None
+
+
+def eliminar_artista(artista_id: int) -> bool:
+    """Elimina al artista indicado y devuelve si existía."""
+    cliente = _obtener_cliente()
+    existente = buscar_artista(artista_id)
+    if existente is None:
+        return False
+
+    cliente.table(TABLA_ARTISTAS).delete().eq("id", artista_id).execute()
+    return True

@@ -64,11 +64,13 @@ Requiere Python 3.10 o superior.
 | Método | Ruta | Descripción | Protegido |
 |---|---|---|---|
 | GET | `/` | Verifica que la API funciona. | No |
-| GET | `/items` | Lista todos. Admite `?buscar=texto` para filtrar por nombre. | No |
-| GET | `/items/{id}` | Devuelve uno por id (404 si no existe). | No |
-| POST | `/items` | Agrega uno nuevo. | Sí, con API Key |
+| GET | `/artistas` | Lista todos. Admite `?buscar=texto` para filtrar por nombre artístico. | No |
+| GET | `/artistas/{artista_id}` | Devuelve uno por id (404 si no existe). | No |
+| POST | `/artistas` | Agrega un artista nuevo. | Sí, con API Key |
+| PUT | `/artistas/{artista_id}` | Reemplaza los datos de un artista existente (404 si no existe). | Sí, con API Key |
+| DELETE | `/artistas/{artista_id}` | Elimina un artista existente (204; 404 si no existe). | Sí, con API Key |
 
-Para probar el POST, enviar el header `X-API-Key` con la clave del `.env`. En `/docs` se usa el botón **Authorize**; en Postman, la pestaña **Headers**. Sin clave (o con una incorrecta), la API responde `401`.
+Para probar el POST, PUT o DELETE, enviar el header `X-API-Key` con la clave del `.env`. En `/docs` se usa el botón **Authorize**; en Postman, la pestaña **Headers**. Sin clave (o con una incorrecta), la API responde `401`.
 
 Ejemplo de body para el POST:
 
@@ -80,12 +82,9 @@ Ejemplo de body para el POST:
 
 Buscar `CAMBIAR` en los archivos para encontrar cada punto a modificar.
 
-1. **Elegir el objeto X** del proyecto y sus campos (por ejemplo, una mascota con nombre, especie y edad).
-2. **`models.py`:** reemplazar `ItemNuevo` y sus campos por los del objeto elegido. No incluir el `id`: lo asigna `db.py`.
-3. **`datos.json`:** reemplazar los datos de ejemplo por otros con los mismos campos, cada uno con su `id`.
-4. **`db.py`:** renombrar las funciones (`cargar_items`, `agregar_item`...) y, si se quiere, el archivo de datos. Si cambia el nombre de un campo, revisar las funciones que lo usan.
-5. **`main.py`:** renombrar rutas (`/items`), funciones, el título de la API y el campo por el que filtra `listar_items`.
-6. **README:** actualizar la descripción de la API.
+Crear una tabla llamada `Artistas` con una columna `id` autogenerada y las columnas de artista usadas en el ejemplo. La tabla debe permitir las operaciones de lectura, escritura, actualización y eliminación desde la clave configurada en `SUPABASE_KEY`. La API consulta esta tabla para las rutas GET, y guarda, actualiza o elimina registros en POST, PUT y DELETE.
+
+Para cargar los diez registros iniciales de `datos.json`, ejecutar `seed_artistas.sql` en el SQL Editor de Supabase, después de crear la tabla.
 
 ## Publicar en un cloud
 

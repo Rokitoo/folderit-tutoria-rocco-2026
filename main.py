@@ -7,7 +7,7 @@ import os
 import secrets
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, Security
+from fastapi import Depends, FastAPI, HTTPException, Response, Security
 from fastapi.security import APIKeyHeader
 
 import db
@@ -60,7 +60,31 @@ def ver_item(item_id: int):
         raise HTTPException(status_code=404, detail="Item no encontrado")
     return item
 
+@app.post("/artistas", status_code=201, dependencies=[Depends(verificar_api_key)])
+def agregar_artista(nuevo: ArtistaNuevo):
+    return db.agregar_artista(nuevo.model_dump())
 
-@app.post("/items", status_code=201, dependencies=[Depends(verificar_api_key)])
-def agregar_item(nuevo: ItemNuevo):
-    return db.agregar_item(nuevo.model_dump())
+
+@app.put(
+    "/artistas/{artista_id}",
+    dependencies=[Depends(verificar_api_key)],
+)
+def actualizar_artista(artista_id: int, artista_actualizado: ArtistaNuevo):
+    artista = db.actualizar_artista(
+        artista_id, artista_actualizado.model_dump()
+    )
+    if artista is None:
+        raise HTTPException(status_code=404, detail="Artista no encontrado")
+    return artista
+
+
+@app.delete(
+    "/artistas/{artista_id}",
+    status_code=204,
+    dependencies=[Depends(verificar_api_key)],
+)
+def eliminar_artista(artista_id: int):
+    eliminado = db.eliminar_artista(artista_id)
+    if not eliminado:
+        raise HTTPException(status_code=404, detail="Artista no encontrado")
+    return Response(status_code=204)
