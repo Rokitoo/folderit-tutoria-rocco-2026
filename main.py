@@ -77,7 +77,7 @@ def actualizar_artista(artista_id: int, artista_actualizado: ArtistaNuevo):
         raise HTTPException(status_code=404, detail="Artista no encontrado")
     return artista
 
-
+# Este metodo hace que puedas eliminar un artista de la base de datos mediante el ApiDog
 @app.delete(
     "/artistas/{artista_id}",
     status_code=204,
