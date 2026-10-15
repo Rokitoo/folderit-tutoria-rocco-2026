@@ -1,42 +1,76 @@
-"""Base de datos simulada: guarda los datos en un archivo JSON.
+"""Acceso a la tabla de artistas en Supabase.
 
-Todo el acceso a los datos está en este archivo. Los endpoints de main.py solo
-llaman a estas funciones, sin saber dónde ni cómo se guardan. Más adelante se
-puede reemplazar este archivo por una base de datos real sin tocar main.py.
+Los endpoints de main.py usan estas funciones para consultar y guardar artistas.
 """
-import json
-from pathlib import Path
+from __future__ import annotations
 
-# CAMBIAR (opcional): nombre del archivo de datos
-ARCHIVO = Path(__file__).parent / "datos.json"
+import os
+from typing import TYPE_CHECKING, Any
 
+if TYPE_CHECKING:
+    from supabase import Client
 
-def cargar_items():
-    """Lee el archivo y devuelve la lista de elementos."""
-    if not ARCHIVO.exists():
-        return []
-    return json.loads(ARCHIVO.read_text(encoding="utf-8"))
+TABLA_ARTISTAS = "Artistas"
+_cliente: Client | None = None
 
 
-def guardar_items(items):
-    """Escribe la lista completa de elementos en el archivo."""
-    texto = json.dumps(items, ensure_ascii=False, indent=2)
-    ARCHIVO.write_text(texto, encoding="utf-8")
+def _obtener_cliente() -> Client:
+    """Crea el cliente de Supabase la primera vez que se necesita."""
+    global _cliente
+    if _cliente is None:
+        url = os.getenv("SUPABASE_URL")
+        clave = os.getenv("SUPABASE_KEY")
+        if not url or not clave:
+            raise RuntimeError(
+                "Faltan SUPABASE_URL o SUPABASE_KEY en la configuración."
+            )
+        from supabase import create_client
+
+        _cliente = create_client(url, clave)
+    return _cliente
 
 
-def buscar_item(item_id):
-    """Devuelve el elemento con ese id, o None si no existe."""
-    for item in cargar_items():
-        if item["id"] == item_id:
-            return item
-    return None
+def cargar_artistas() -> list[dict[str, Any]]:
+    """Devuelve todos los artistas guardados en Supabase."""
+    response = _obtener_cliente().table(TABLA_ARTISTAS).select("*").execute()
+    return response.data
 
 
-def agregar_item(datos):
-    """Agrega un elemento nuevo (diccionario sin id), le asigna un id y lo devuelve."""
-    items = cargar_items()
-    nuevo_id = max((i["id"] for i in items), default=0) + 1
-    item = {"id": nuevo_id, **datos}
-    items.append(item)
-    guardar_items(items)
-    return item
+def buscar_artista(artista_id: int) -> dict[str, Any] | None:
+    """Devuelve el artista con ese id, o None si no existe."""
+    response = (
+        _obtener_cliente()
+        .table(TABLA_ARTISTAS)
+        .select("*")
+        .eq("id", artista_id)
+        .limit(1)
+        .execute()
+    )
+    return response.data[0] if response.data else None
+
+
+def agregar_artista(datos: dict[str, Any]) -> dict[str, Any]:
+    """Inserta un artista y devuelve la fila creada por Supabase."""
+    response = (
+        _obtener_cliente()
+        .table(TABLA_ARTISTAS)
+        .insert(datos)
+        .execute()
+    )
+    if not response.data:
+        raise RuntimeError("Supabase no devolvió el artista insertado.")
+    return response.data[0]
+
+
+def actualizar_artista(
+    artista_id: int, datos: dict[str, Any]
+) -> dict[str, Any] | None:
+    """Reemplaza los datos del artista y devuelve la fila actualizada, si existe."""
+    response = (
+        _obtener_cliente()
+        .table(TABLA_ARTISTAS)
+        .update(datos)
+        .eq("id", artista_id)
+        .execute()
+    )
+    return response.data[0] if response.data else None
